@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BaselineCNN Architecture — CSCI611</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #1a1d27;
+    --border: rgba(255,255,255,0.1);
+    --border2: rgba(255,255,255,0.2);
+    --text: #e8eaf0;
+    --text2: #9aa0b8;
+    --text3: #5c6280;
+    --info-bg: rgba(56,139,255,0.12);
+    --info-border: rgba(56,139,255,0.35);
+    --info-text: #6db3ff;
+    --success-bg: rgba(40,180,100,0.12);
+    --success-border: rgba(40,180,100,0.3);
+    --success-text: #5dcc88;
+    --warn-bg: rgba(220,160,40,0.12);
+    --warn-border: rgba(220,160,40,0.3);
+    --warn-text: #e0b84a;
+    --mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  body.light {
+    --bg: #f5f6fa;
+    --bg2: #ffffff;
+    --border: rgba(0,0,0,0.1);
+    --border2: rgba(0,0,0,0.2);
+    --text: #1a1d27;
+    --text2: #4a5068;
+    --text3: #9aa0b8;
+    --info-bg: rgba(56,139,255,0.08);
+    --info-border: rgba(56,139,255,0.3);
+    --info-text: #1a6fd4;
+    --success-bg: rgba(40,180,100,0.08);
+    --success-border: rgba(40,180,100,0.25);
+    --success-text: #1a8f50;
+    --warn-bg: rgba(180,120,20,0.08);
+    --warn-border: rgba(180,120,20,0.25);
+    --warn-text: #8f6010;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.6; padding: 24px; max-width: 900px; margin: 0 auto; transition: background 0.2s, color 0.2s; }
+  h1 { font-size: 16px; font-weight: 500; margin-bottom: 4px; }
+  .subtitle { font-size: 12px; color: var(--text3); margin-bottom: 20px; font-family: var(--mono); }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0; }
+  .toggle-btn { padding: 4px 12px; font-size: 11px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: transparent; color: var(--text2); cursor: pointer; }
+
+  .pipe-strip { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding-bottom: 14px; margin-bottom: 16px; border-bottom: 0.5px solid var(--border); }
+  .pipe-node { font-size: 11px; font-family: var(--mono); padding: 3px 8px; border-radius: 4px; white-space: nowrap; line-height: 1.5; }
+  .pipe-node.dim { background: var(--bg2); color: var(--text3); border: 0.5px solid var(--border); }
+  .pipe-node.active { background: var(--info-bg); color: var(--info-text); border: 1px solid var(--info-border); }
+  .pipe-arrow { color: var(--text3); font-size: 12px; padding: 0 2px; }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab-btn { padding: 5px 14px; font-size: 12px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: transparent; color: var(--text2); cursor: pointer; }
+  .tab-btn.active { border: 1.5px solid var(--info-border); background: var(--info-bg); color: var(--info-text); }
+
+  .shape-trace { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding-bottom: 12px; margin-bottom: 14px; border-bottom: 0.5px solid var(--border); }
+  .shape-node { font-size: 11px; font-family: var(--mono); background: var(--bg2); padding: 3px 7px; border-radius: 4px; color: var(--text2); border: 0.5px solid var(--border); white-space: nowrap; line-height: 1.5; }
+  .shape-node.out { background: var(--info-bg); color: var(--info-text); border-color: var(--info-border); }
+
+  .main-grid { display: grid; grid-template-columns: 220px 1fr; gap: 14px; align-items: start; }
+  .block-list { display: flex; flex-direction: column; gap: 6px; }
+  .block-card { padding: 8px 12px; border-radius: var(--radius); border: 0.5px solid var(--border); background: var(--bg2); cursor: pointer; transition: border-color 0.15s; }
+  .block-card:hover { border-color: var(--border2); }
+  .block-card.sel { border: 1px solid var(--info-border); background: var(--info-bg); }
+  .block-label { font-size: 12px; font-weight: 500; font-family: var(--mono); color: var(--text); }
+  .block-card.sel .block-label { color: var(--info-text); }
+  .block-shape { font-size: 11px; color: var(--text3); font-family: var(--mono); margin-top: 2px; }
+  .pill { font-size: 10px; padding: 1px 6px; border-radius: 4px; flex-shrink: 0; }
+  .pill-pool { background: var(--warn-bg); color: var(--warn-text); }
+  .pill-cls { background: var(--info-bg); color: var(--info-text); }
+
+  .detail-panel { background: var(--bg2); border-radius: var(--radius-lg); border: 0.5px solid var(--border); padding: 16px; min-height: 200px; }
+  .detail-title { font-size: 14px; font-weight: 500; font-family: var(--mono); color: var(--text); margin-bottom: 4px; }
+  .detail-shape { font-size: 11px; font-family: var(--mono); color: var(--text2); margin-bottom: 10px; }
+  .detail-why { font-size: 13px; color: var(--text); line-height: 1.7; margin-bottom: 12px; }
+  .layer-row { font-size: 12px; color: var(--text); padding: 5px 0; border-bottom: 0.5px solid var(--border); line-height: 1.5; font-family: var(--mono); }
+  .rule-box { margin-top: 10px; background: var(--bg); border-radius: var(--radius); padding: 8px 12px; border-left: 2px solid var(--info-border); font-size: 12px; color: var(--text2); line-height: 1.6; }
+  .code-block { margin-top: 10px; background: var(--bg); border-radius: var(--radius); padding: 10px 12px; border: 0.5px solid var(--border); }
+  .code-block pre { font-size: 12px; font-family: var(--mono); color: var(--text); white-space: pre-wrap; }
+
+  .term-list { display: flex; flex-direction: column; gap: 6px; }
+  .term-card { padding: 9px 12px; border-radius: var(--radius); border: 0.5px solid var(--border); background: var(--bg2); cursor: pointer; }
+  .term-card:hover { border-color: var(--border2); }
+  .term-card.sel { border: 1px solid var(--info-border); background: var(--info-bg); }
+  .term-name { font-size: 12px; font-weight: 500; color: var(--text); }
+  .term-card.sel .term-name { color: var(--info-text); }
+  .connects-box { background: var(--bg); border-radius: var(--radius); padding: 8px 12px; border: 0.5px solid var(--border); font-size: 12px; color: var(--text2); font-family: var(--mono); margin-top: 10px; }
+
+  @media (max-width: 600px) { .main-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>BaselineCNN Architecture</h1>
+    <p class="subtitle">CSCI611 · Stanford Cars · PyTorch · Danial Bahrami Siavashani</p>
+  </div>
+  <button class="toggle-btn" id="theme-toggle" onclick="toggleTheme()">Light mode</button>
+</div>
+
+<div class="pipe-strip">
+  <span class="pipe-node dim">transforms<br><span style="opacity:.6">tensor arrives here</span></span>
+  <span class="pipe-arrow">→</span>
+  <span class="pipe-node dim">DataLoader<br><span style="opacity:.6">[32,3,224,224]</span></span>
+  <span class="pipe-arrow">→</span>
+  <span class="pipe-node active">BaselineCNN<br><span style="opacity:.8">you are here</span></span>
+  <span class="pipe-arrow">→</span>
+  <span class="pipe-node dim">logits [32,196]<br><span style="opacity:.6">→ CrossEntropyLoss</span></span>
+  <span class="pipe-arrow">→</span>
+  <span class="pipe-node dim">backprop<br><span style="opacity:.6">→ Adam updates weights</span></span>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" id="tab-arch" onclick="switchTab('arch')">Architecture</button>
+  <button class="tab-btn" id="tab-terms" onclick="switchTab('terms')">Terminology</button>
+</div>
+
+<div id="pane-arch">
+  <div class="shape-trace">
+    <span class="shape-node">[32,3,224,224]</span><span class="pipe-arrow">→</span>
+    <span class="shape-node">[32,32,112,112]</span><span class="pipe-arrow">→</span>
+    <span class="shape-node">[32,64,112,112]</span><span class="pipe-arrow">→</span>
+    <span class="shape-node">[32,128,56,56]</span><span class="pipe-arrow">→</span>
+    <span class="shape-node">[32,256,56,56]</span><span class="pipe-arrow">→</span>
+    <span class="shape-node">[32,256,28,28]</span><span class="pipe-arrow">→</span>
+    <span class="shape-node out">[32,196]<br><span style="opacity:.8">logits out</span></span>
+  </div>
+  <div class="main-grid">
+    <div class="block-list" id="block-list"></div>
+    <div class="detail-panel" id="block-detail">
+      <p style="color:var(--text3);font-size:13px">← Click a block to inspect it.</p>
+    </div>
+  </div>
+</div>
+
+<div id="pane-terms" style="display:none">
+  <div class="main-grid">
+    <div class="term-list" id="term-list"></div>
+    <div class="detail-panel" id="term-detail">
+      <p style="color:var(--text3);font-size:13px">← Click a term to see its definition and analogy.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const blocks=[
+  {id:'b1',label:'block1',pill:'pool',in:'[32, 3, 224, 224]',out:'[32, 32, 112, 112]',
+   why:'First conv layer. Takes the 3-channel RGB image and produces 32 feature maps. Each of the 32 filters is a 3×3×3 volume — one slice per input channel — that collapses all 3 channels into a single output map. MaxPool halves 224→112.',
+   rule:'Output channels (32) were chosen freely — not computed. The only rule: block2\'s ch_in must equal this 32.',
+   layers:['Conv2d(3→32, kernel=3×3, padding=1)  — 32 learned filters, each 3×3×3','BatchNorm2d(32)  — normalizes activations within the batch','ReLU()  — kills negative values, adds non-linearity','MaxPool2d(2, 2)  — halves H and W: 224→112'],
+   code:'nn.Sequential(\n    nn.Conv2d(3, 32, 3, padding=1),\n    nn.BatchNorm2d(32),\n    nn.ReLU(),\n    nn.MaxPool2d(2, 2)\n)'},
+  {id:'b2',label:'block2',pill:null,in:'[32, 32, 112, 112]',out:'[32, 64, 112, 112]',
+   why:'Doubles channels 32→64. No MaxPool — spatial size stays at 112. ch_in=32 because that is what block1 output. ch_out=64 was a free choice.',
+   rule:'ch_in (32) must match block1\'s ch_out. ch_out (64) is a free design choice.',
+   layers:['Conv2d(32→64, kernel=3×3, padding=1)  — 64 learned filters','BatchNorm2d(64)','ReLU()'],
+   code:'nn.Sequential(\n    nn.Conv2d(32, 64, 3, padding=1),\n    nn.BatchNorm2d(64),\n    nn.ReLU()\n)'},
+  {id:'b3',label:'block3',pill:'pool',in:'[32, 64, 112, 112]',out:'[32, 128, 56, 56]',
+   why:'Doubles channels 64→128 and halves spatial 112→56 via MaxPool. ch_in=64 must match block2 output. ch_out=128 was chosen.',
+   rule:'ch_in (64) must match block2\'s ch_out. ch_out (128) is a free design choice.',
+   layers:['Conv2d(64→128, kernel=3×3, padding=1)','BatchNorm2d(128)','ReLU()','MaxPool2d(2, 2)  — halves H and W: 112→56'],
+   code:'nn.Sequential(\n    nn.Conv2d(64, 128, 3, padding=1),\n    nn.BatchNorm2d(128),\n    nn.ReLU(),\n    nn.MaxPool2d(2, 2)\n)'},
+  {id:'b4',label:'block4',pill:null,in:'[32, 128, 56, 56]',out:'[32, 256, 56, 56]',
+   why:'Doubles channels 128→256. No MaxPool. ch_in=128 must match block3. ch_out=256 was chosen.',
+   rule:'ch_in (128) must match block3\'s ch_out. ch_out (256) is a free design choice.',
+   layers:['Conv2d(128→256, kernel=3×3, padding=1)','BatchNorm2d(256)','ReLU()'],
+   code:'nn.Sequential(\n    nn.Conv2d(128, 256, 3, padding=1),\n    nn.BatchNorm2d(256),\n    nn.ReLU()\n)'},
+  {id:'b5',label:'block5',pill:'pool',in:'[32, 256, 56, 56]',out:'[32, 256, 28, 28]',
+   why:'Channels stay 256, spatial halves 56→28. ch_in=256 must match block4. ch_out=256 was chosen — same value, still a free choice.',
+   rule:'ch_in (256) must match block4\'s ch_out. ch_out (256) is still a free choice — it just happens to be the same number.',
+   layers:['Conv2d(256→256, kernel=3×3, padding=1)','BatchNorm2d(256)','ReLU()','MaxPool2d(2, 2)  — halves H and W: 56→28'],
+   code:'nn.Sequential(\n    nn.Conv2d(256, 256, 3, padding=1),\n    nn.BatchNorm2d(256),\n    nn.ReLU(),\n    nn.MaxPool2d(2, 2)\n)'},
+  {id:'b6',label:'block6',pill:null,in:'[32, 256, 28, 28]',out:'[32, 256, 28, 28]',
+   why:'Shape does not change at all. Same channels in and out, no MaxPool. Refines features one more time before the classifier.',
+   rule:'ch_in (256) must match block5\'s ch_out. ch_out (256) is a free choice. Shape unchanged because no MaxPool.',
+   layers:['Conv2d(256→256, kernel=3×3, padding=1)','BatchNorm2d(256)','ReLU()'],
+   code:'nn.Sequential(\n    nn.Conv2d(256, 256, 3, padding=1),\n    nn.BatchNorm2d(256),\n    nn.ReLU()\n)'},
+  {id:'cls',label:'classifier',pill:'cls',in:'[32, 256, 28, 28]',out:'[32, 196]  — logits',
+   why:'AdaptiveAvgPool collapses 28×28→1×1 per channel. Flatten gives [32,256]. Three Linear layers taper 256→1024→512→196. ReLU adds non-linearity. Dropout(0.5) randomly zeros 50% of neurons during training.',
+   rule:'Linear(256, 1024) — that 256 must match block6\'s ch_out. Change block6 without updating this and PyTorch throws a shape error immediately.',
+   layers:['AdaptiveAvgPool2d(1)  — [32,256,28,28] → [32,256,1,1]','Flatten()  — [32,256,1,1] → [32,256]','Linear(256→1024) + ReLU + Dropout(0.5)','Linear(1024→512) + ReLU + Dropout(0.5)','Linear(512→196)  — raw logits, one per class'],
+   code:'nn.Sequential(\n    nn.AdaptiveAvgPool2d(1),\n    nn.Flatten(),\n    nn.Linear(256, 1024),\n    nn.ReLU(),\n    nn.Dropout(0.5),\n    nn.Linear(1024, 512),\n    nn.ReLU(),\n    nn.Dropout(0.5),\n    nn.Linear(512, 196)\n)'}
+];
+
+const terms=[
+  {id:'channelrule',name:'Channel rule',
+   def:'ch_in of each block must equal ch_out of the previous block. Output channels are a free design choice — you pick the number.',
+   analogy:'A relay race. The baton handed out must match what the next runner expects to receive. The speed of the next runner is entirely your choice.',
+   connects:'Every Conv2d in the model. Also Linear(256, 1024) in the classifier — that 256 must match block6\'s ch_out.'},
+  {id:'kernel',name:'Kernel (filter)',
+   def:'A small 3×3×3 volume of learned numbers. One 3×3 slice per input channel. Slides across the input, computes a dot product at each position, collapses all input channels into one output number per position.',
+   analogy:'The food critic\'s nose. Slides square by square scoring how strongly it detects one flavor. Each critic reads all 3 color layers simultaneously and writes one report.',
+   connects:'Conv2d(3, 32, 3, ...) — third argument "3" is kernel size. 32 filters → 32 output feature maps.'},
+  {id:'featuremap',name:'Feature map',
+   def:'The output produced after one filter slides across the entire input. One filter → one feature map. block1 produces 32 feature maps.',
+   analogy:'The heatmap the food critic produces — showing where on the dish that flavor was strongly detected.',
+   connects:'Channels dimension in tensor shape. [32, 32, 112, 112] → 32 feature maps, each 112×112.'},
+  {id:'maxpool',name:'MaxPool2d',
+   def:'Slides a 2×2 window with stride 2. Keeps only the max value in each window. Halves both H and W automatically — no hardcoding needed.',
+   analogy:'Summarizing a detailed city map into a zoomed-out version — keep the prominent landmarks, discard fine detail.',
+   connects:'Blocks 1, 3, 5. Each MaxPool2d(2,2) halves spatial size: 224→112→56→28.'},
+  {id:'batchnorm',name:'BatchNorm2d',
+   def:'Normalizes activations within a batch to have roughly mean=0, std=1. Keeps activations from exploding or vanishing.',
+   analogy:'A sound engineer leveling volume between songs — nobody too loud or too quiet. Consistent range so the next layer doesn\'t deal with wild swings.',
+   connects:'After every Conv2d. model.train() updates BN stats. model.eval() freezes them.'},
+  {id:'relu',name:'ReLU',
+   def:'f(x) = max(0, x). Negatives become 0, positives pass through. Without it, stacking linear layers collapses into one.',
+   analogy:'A one-way valve. Signal flows forward if positive, gets blocked if negative.',
+   connects:'Prevents vanishing gradients. Used after every Conv2d and Linear except the final output.'},
+  {id:'dropout',name:'Dropout(0.5)',
+   def:'Randomly zeros 50% of neurons each training step. Different neurons each time. Disabled during eval.',
+   analogy:'Randomly benching half your team each practice. Nobody relies on the same teammate — everyone learns to carry their own weight.',
+   connects:'model.train() → Dropout ON. model.eval() → Dropout OFF. Missing model.eval() corrupts validation accuracy.'},
+  {id:'adaptiveavg',name:'AdaptiveAvgPool2d(1)',
+   def:'Collapses each feature map to 1×1 regardless of input size. Averages all values per channel into one number.',
+   analogy:'Asking 256 critics — did you detect your pattern anywhere? You lose where it appeared, but for classification you only care whether it appeared.',
+   connects:'Replaced Flatten() in original model. Reduced classifier input from 200,704 → 256. Why training un-stalled.'},
+  {id:'logits',name:'Logits',
+   def:'Raw unnormalized scores from Linear(512, 196). One number per class. Not probabilities.',
+   analogy:'196 judges each shouting a raw score. Highest score is the prediction. CrossEntropyLoss takes these directly — do not softmax before passing to the loss.',
+   connects:'Output shape [32, 196]. torch.max(output, 1) picks the highest logit as the predicted class.'}
+];
+
+let selBlock=null, selTerm=null, isLight=false;
+
+function toggleTheme(){
+  isLight=!isLight;
+  document.body.classList.toggle('light',isLight);
+  document.getElementById('theme-toggle').textContent=isLight?'Dark mode':'Light mode';
+}
+
+function switchTab(t){
+  document.getElementById('pane-arch').style.display=t==='arch'?'block':'none';
+  document.getElementById('pane-terms').style.display=t==='terms'?'block':'none';
+  document.getElementById('tab-arch').className='tab-btn'+(t==='arch'?' active':'');
+  document.getElementById('tab-terms').className='tab-btn'+(t==='terms'?' active':'');
+}
+
+function renderBlocks(){
+  const c=document.getElementById('block-list');
+  c.innerHTML='';
+  blocks.forEach(b=>{
+    const sel=selBlock===b.id;
+    const d=document.createElement('div');
+    d.className='block-card'+(sel?' sel':'');
+    const pill=b.pill==='pool'?`<span class="pill pill-pool">MaxPool</span>`:b.pill==='cls'?`<span class="pill pill-cls">classifier</span>`:'';
+    d.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><span class="block-label">${b.label}</span>${pill}</div><div class="block-shape">${b.in} → ${b.out}</div>`;
+    d.onclick=()=>selectBlock(b.id);
+    c.appendChild(d);
+  });
+}
+
+function selectBlock(id){
+  selBlock=id;
+  renderBlocks();
+  const b=blocks.find(x=>x.id===id);
+  const layerHtml=b.layers.map(l=>`<div class="layer-row">${l}</div>`).join('');
+  document.getElementById('block-detail').innerHTML=`
+    <p class="detail-title">${b.label}</p>
+    <p class="detail-shape">${b.in} → ${b.out}</p>
+    <p class="detail-why">${b.why}</p>
+    <div style="border-top:0.5px solid var(--border);padding-top:10px;margin-bottom:6px">${layerHtml}</div>
+    <div class="rule-box">${b.rule}</div>
+    <div class="code-block"><pre>${b.code}</pre></div>`;
+}
+
+function renderTerms(){
+  const c=document.getElementById('term-list');
+  c.innerHTML='';
+  terms.forEach(t=>{
+    const sel=selTerm===t.id;
+    const d=document.createElement('div');
+    d.className='term-card'+(sel?' sel':'');
+    d.innerHTML=`<div class="term-name">${t.name}</div>`;
+    d.onclick=()=>selectTerm(t.id);
+    c.appendChild(d);
+  });
+}
+
+function selectTerm(id){
+  selTerm=id;
+  renderTerms();
+  const t=terms.find(x=>x.id===id);
+  document.getElementById('term-detail').innerHTML=`
+    <p style="font-size:14px;font-weight:500;color:var(--text);margin:0 0 10px">${t.name}</p>
+    <p style="font-size:13px;color:var(--text);margin:0 0 10px;line-height:1.7"><span style="color:var(--text3);font-size:12px">What it is  </span>${t.def}</p>
+    <p style="font-size:13px;color:var(--text);margin:0 0 10px;line-height:1.7"><span style="color:var(--text3);font-size:12px">Analogy  </span>${t.analogy}</p>
+    <div class="connects-box">${t.connects}</div>`;
+}
+
+renderBlocks();
+renderTerms();
+</script>
+</body>
+</html>
