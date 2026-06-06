@@ -29,3 +29,6 @@ outputs/reports/
 # OS
 .DS_Store
 Thumbs.db
+
+# Reference artifacts
+reference/

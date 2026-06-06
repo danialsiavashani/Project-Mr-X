@@ -5,28 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="3f3c5696-d81c-4784-9770-d67f8bd630e1" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/bird-classifier-warmup.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/reference/Baseline_CNN_model.ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/scripts/error_analysis.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/scripts/evaluate_baseline.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/scripts/predict_sample.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/scripts/train_baseline.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/datasets/bird_dataset.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/datasets/transforms.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/models/baseline_cnn.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/training/evaluate.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/training/metrics.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/training/predict.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/training/train.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/utils/config.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/utils/device.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/utils/paths.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/utils/seed.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -45,14 +24,14 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;terminal&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
+    "settings.editor.selected.configurable": "terminal"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="D:\projects\PycharmProjects\bird-classifier-warmup\reference" />
