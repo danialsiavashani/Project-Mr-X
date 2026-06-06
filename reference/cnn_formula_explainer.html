@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CNN Training Formula — CSCI611</title>
+<style>
+  :root {
+    --bg:#0f1117;--bg2:#1a1d27;--bg3:#222537;
+    --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);
+    --text:#e8eaf0;--text2:#9aa0b8;--text3:#5c6280;
+    --accent:#6db3ff;--accent-bg:rgba(56,139,255,0.12);--accent-border:rgba(56,139,255,0.35);
+    --success:#5dcc88;--success-bg:rgba(40,180,100,0.12);--success-border:rgba(40,180,100,0.3);
+    --warn:#e0b84a;--warn-bg:rgba(220,160,40,0.12);--warn-border:rgba(220,160,40,0.3);
+    --mono:'JetBrains Mono','Fira Code','Courier New',monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --r:8px;--rl:12px;
+  }
+  body.light {
+    --bg:#f5f6fa;--bg2:#ffffff;--bg3:#eef0f5;
+    --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.2);
+    --text:#1a1d27;--text2:#4a5068;--text3:#9aa0b8;
+    --accent:#1a6fd4;--accent-bg:rgba(56,139,255,0.08);--accent-border:rgba(56,139,255,0.3);
+    --success:#1a8f50;--success-bg:rgba(40,180,100,0.08);--success-border:rgba(40,180,100,0.25);
+    --warn:#8f6010;--warn-bg:rgba(180,120,20,0.08);--warn-border:rgba(180,120,20,0.25);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.6;padding:24px;max-width:960px;margin:0 auto;transition:background .2s,color .2s}
+
+  .topbar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
+  .toggle-btn{padding:4px 12px;font-size:11px;border-radius:var(--r);border:0.5px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer}
+
+  .pipe-strip{display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding-bottom:14px;margin-bottom:20px;border-bottom:0.5px solid var(--border)}
+  .pipe-node{font-size:11px;font-family:var(--mono);padding:3px 8px;border-radius:4px;white-space:nowrap;line-height:1.5;border:0.5px solid var(--border)}
+  .pipe-node.dim{background:var(--bg2);color:var(--text3)}
+  .pipe-node.active{background:var(--accent-bg);color:var(--accent);border-color:var(--accent-border)}
+  .pipe-arrow{color:var(--text3);font-size:12px;padding:0 2px}
+
+  /* Interactive controls */
+  .controls{background:var(--bg2);border-radius:var(--rl);border:0.5px solid var(--border);padding:16px;margin-bottom:20px}
+  .controls-title{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px}
+  .controls-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+  .ctrl-group{display:flex;flex-direction:column;gap:6px}
+  .ctrl-label{font-size:12px;color:var(--text2)}
+  .ctrl-row{display:flex;align-items:center;gap:10px}
+  .ctrl-row input[type=range]{flex:1;accent-color:var(--accent)}
+  .ctrl-val{font-size:13px;font-weight:500;font-family:var(--mono);color:var(--text);min-width:52px;text-align:right}
+
+  /* Result cards */
+  .results-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:14px}
+  .result-card{background:var(--bg);border-radius:var(--r);padding:12px;border:0.5px solid var(--border);text-align:center}
+  .result-card.accent{background:var(--accent-bg);border-color:var(--accent-border)}
+  .result-card.success{background:var(--success-bg);border-color:var(--success-border)}
+  .result-card.warn{background:var(--warn-bg);border-color:var(--warn-border)}
+  .result-formula{font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:4px}
+  .result-val{font-size:22px;font-weight:500;font-family:var(--mono);color:var(--text)}
+  .result-card.accent .result-val{color:var(--accent)}
+  .result-card.success .result-val{color:var(--success)}
+  .result-card.warn .result-val{color:var(--warn)}
+  .result-hint{font-size:11px;color:var(--text3);margin-top:4px}
+  .result-card.accent .result-hint{color:var(--accent);opacity:.7}
+  .result-card.success .result-hint{color:var(--success);opacity:.7}
+  .result-card.warn .result-hint{color:var(--warn);opacity:.7}
+
+  /* Steps */
+  .main-grid{display:grid;grid-template-columns:220px 1fr;gap:14px;align-items:start;margin-bottom:20px}
+  .step-card{padding:9px 12px;border-radius:var(--r);border:0.5px solid var(--border);background:var(--bg2);cursor:pointer;margin-bottom:6px}
+  .step-card:hover{border-color:var(--border2)}
+  .step-card.sel{border:1px solid var(--accent-border);background:var(--accent-bg)}
+  .step-num{font-size:10px;color:var(--text3);margin-bottom:2px}
+  .step-name{font-size:12px;font-weight:500;font-family:var(--mono);color:var(--text)}
+  .step-card.sel .step-name{color:var(--accent)}
+  .step-formula{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+
+  .detail{background:var(--bg2);border-radius:var(--rl);border:0.5px solid var(--border);padding:16px;min-height:240px}
+  .detail-step{font-size:11px;color:var(--text3);margin-bottom:4px}
+  .detail-title{font-size:15px;font-weight:500;font-family:var(--mono);color:var(--text);margin-bottom:6px}
+  .detail-formula-box{background:var(--bg);border-radius:var(--r);padding:10px 14px;border:0.5px solid var(--border);margin-bottom:12px;font-size:14px;font-family:var(--mono);color:var(--accent)}
+  .detail-why{font-size:13px;color:var(--text);line-height:1.7;margin-bottom:10px}
+  .detail-analogy{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:10px}
+  .detail-code{background:var(--bg);border-radius:var(--r);padding:10px 12px;border:0.5px solid var(--border)}
+  .detail-code pre{font-size:12px;font-family:var(--mono);color:var(--text);white-space:pre-wrap}
+  .applies-to{font-size:11px;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:10px;background:var(--success-bg);color:var(--success);border:0.5px solid var(--success-border)}
+
+  /* Full loop */
+  .loop-section{background:var(--bg2);border-radius:var(--rl);border:0.5px solid var(--border);padding:16px}
+  .loop-title{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px}
+  .loop-strip{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .loop-node{font-size:11px;font-family:var(--mono);padding:6px 10px;border-radius:var(--r);border:0.5px solid var(--border);background:var(--bg);text-align:center;line-height:1.5}
+  .loop-node.hl{background:var(--accent-bg);border-color:var(--accent-border);color:var(--accent)}
+  .loop-arrow{color:var(--text3);font-size:16px}
+  .loop-note{font-size:12px;color:var(--text2);margin-top:12px;line-height:1.7;border-top:0.5px solid var(--border);padding-top:12px}
+
+  @media(max-width:600px){.main-grid{grid-template-columns:1fr}.controls-grid{grid-template-columns:1fr}.results-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div style="font-size:16px;font-weight:500;margin-bottom:4px">CNN Training Formula</div>
+    <div style="font-size:12px;color:var(--text3);font-family:var(--mono)">CSCI611 · BaselineCNN · VGG · EfficientNet · MobileNet · all follow this</div>
+  </div>
+  <button class="toggle-btn" id="theme-btn">Light mode</button>
+</div>
+
+<div class="pipe-strip">
+  <span class="pipe-node dim">image X<br><span style="opacity:.6">raw pixel</span></span>
+  <span class="pipe-arrow">→</span>
+  <span class="pipe-node active">Z = W*X+b<br><span style="opacity:.8">conv</span></span>
+  <span class="pipe-arrow">→</span>
+  <span class="pipe-node active">A = ReLU(Z)<br><span style="opacity:.8">activate</span></span>
+  <span class="pipe-arrow">→</span>
+  <span class="pipe-node active">ŷ = softmax<br><span style="opacity:.8">predict</span></span>
+  <span class="pipe-arrow">→</span>
+  <span class="pipe-node active">L = -log(ŷ_y)<br><span style="opacity:.8">loss</span></span>
+  <span class="pipe-arrow">→</span>
+  <span class="pipe-node active">∂L/∂W<br><span style="opacity:.8">backprop</span></span>
+  <span class="pipe-arrow">→</span>
+  <span class="pipe-node active">W = W - lr·∂L/∂W<br><span style="opacity:.8">update</span></span>
+</div>
+
+<!-- Interactive calculator -->
+<div class="controls">
+  <div class="controls-title">Interactive formula calculator — change any value and watch the math update live</div>
+  <div class="controls-grid">
+    <div class="ctrl-group">
+      <div class="ctrl-label">X — input pixel value</div>
+      <div class="ctrl-row">
+        <input type="range" min="0" max="255" value="128" id="sl-x" oninput="calc()">
+        <span class="ctrl-val" id="lbl-x">128</span>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">W — filter weight</div>
+      <div class="ctrl-row">
+        <input type="range" min="-100" max="100" value="30" id="sl-w" oninput="calc()">
+        <span class="ctrl-val" id="lbl-w">0.30</span>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">b — bias</div>
+      <div class="ctrl-row">
+        <input type="range" min="-100" max="100" value="-20" id="sl-b" oninput="calc()">
+        <span class="ctrl-val" id="lbl-b">-0.20</span>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">ŷ_y — correct class probability</div>
+      <div class="ctrl-row">
+        <input type="range" min="1" max="99" value="51" id="sl-p" oninput="calc()">
+        <span class="ctrl-val" id="lbl-p">0.51</span>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">∂L/∂W — gradient</div>
+      <div class="ctrl-row">
+        <input type="range" min="-100" max="100" value="40" id="sl-g" oninput="calc()">
+        <span class="ctrl-val" id="lbl-g">0.40</span>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">lr — learning rate</div>
+      <div class="ctrl-row">
+        <input type="range" min="1" max="100" value="10" id="sl-lr" oninput="calc()">
+        <span class="ctrl-val" id="lbl-lr">0.0010</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="results-grid">
+    <div class="result-card accent">
+      <div class="result-formula">Z = W × X + b</div>
+      <div class="result-val" id="res-z">0.00</div>
+      <div class="result-hint">conv output (pre-activation)</div>
+    </div>
+    <div class="result-card accent">
+      <div class="result-formula">A = max(0, Z)</div>
+      <div class="result-val" id="res-a">0.00</div>
+      <div class="result-hint">after ReLU</div>
+    </div>
+    <div class="result-card warn">
+      <div class="result-formula">L = -log(ŷ_y)</div>
+      <div class="result-val" id="res-l">0.00</div>
+      <div class="result-hint">loss — lower is better</div>
+    </div>
+    <div class="result-card success">
+      <div class="result-formula">W_new = W - lr·∂L/∂W</div>
+      <div class="result-val" id="res-w">0.00</div>
+      <div class="result-hint">updated weight</div>
+    </div>
+  </div>
+</div>
+
+<!-- Step cards + detail -->
+<div class="main-grid">
+  <div id="step-list"></div>
+  <div class="detail" id="detail-panel">
+    <p style="color:var(--text3);font-size:13px">← Click any step to see the formula, explanation, and analogy.</p>
+  </div>
+</div>
+
+<!-- Full loop -->
+<div class="loop-section">
+  <div class="loop-title">Step 7 — The full training loop (all steps combined)</div>
+  <div class="loop-strip">
+    <div class="loop-node">X<br><span style="color:var(--text3);font-size:10px">input image</span></div>
+    <span class="loop-arrow">→</span>
+    <div class="loop-node hl">Z = W*X+b<br><span style="font-size:10px">convolution</span></div>
+    <span class="loop-arrow">→</span>
+    <div class="loop-node hl">A = ReLU(Z)<br><span style="font-size:10px">activation</span></div>
+    <span class="loop-arrow">→</span>
+    <div class="loop-node hl">ŷ = softmax(W_fc·A+b)<br><span style="font-size:10px">classifier output</span></div>
+    <span class="loop-arrow">→</span>
+    <div class="loop-node hl">L = -log(ŷ_y)<br><span style="font-size:10px">loss vs y</span></div>
+    <span class="loop-arrow">→</span>
+    <div class="loop-node hl">∂L/∂W<br><span style="font-size:10px">backprop</span></div>
+    <span class="loop-arrow">→</span>
+    <div class="loop-node hl">W = W - lr·∂L/∂W<br><span style="font-size:10px">weight update</span></div>
+    <span class="loop-arrow">→</span>
+    <div class="loop-node" style="border-style:dashed">repeat for<br><span style="color:var(--text3);font-size:10px">next batch</span></div>
+  </div>
+  <div class="loop-note">
+    <strong style="color:var(--text)">This loop runs 254 times per epoch</strong> (8144 images ÷ 32 batch size).
+    Over 20 epochs that's 5,080 weight updates. Each update nudges every weight slightly toward lower loss.
+    VGG19, EfficientNet, MobileNet, ResNet — they all run this exact same loop. Only the architecture of Step 1 changes.
+  </div>
+</div>
+
+<script>
+const steps=[
+  {num:"Step 1", name:"Convolution",       formula:"Z = W * X + b",
+   why:"A learned filter W slides across input X. At each position it multiplies filter values by pixel values and sums them up, then adds bias b. This is what detects edges, textures, and shapes.",
+   analogy:"The food critic (filter W) slides across the dish (image X). At each position they score how strongly they detect their flavor. The bias b is their personal baseline — how harsh or lenient they are by default.",
+   code:"# PyTorch does this automatically inside:\noutput = model(data)\n# nn.Conv2d(3, 32, 3, padding=1) performs\n# Z = W * X + b for 32 filters simultaneously",
+   applies:"BaselineCNN blocks 1–6. Also VGG19, EfficientNet, ResNet, MobileNet."},
+
+  {num:"Step 2", name:"Activation (ReLU)", formula:"A = ReLU(Z) = max(0, Z)",
+   why:"Negative values in Z become 0. Positive values pass through unchanged. Without this, stacking conv layers collapses into one linear operation — no depth, no complex pattern detection.",
+   analogy:"A one-way valve. If the critic detected something (positive score) — let it through. If they detected nothing or the opposite (negative) — block it completely.",
+   code:"# PyTorch does this automatically:\nnn.ReLU()\n# Applied after every Conv2d in your model\n# A = max(0, Z)",
+   applies:"After every Conv2d and Linear layer except the final output."},
+
+  {num:"Step 3", name:"Output (ŷ vs y)",   formula:"ŷ = softmax(W_fc · A_flat + b_fc)",
+   why:"The flattened feature vector A_flat passes through Linear layers. Final output is 196 raw logits. Softmax converts them to probabilities summing to 1. ŷ is what the model predicted. y is the correct answer.",
+   analogy:"ŷ (y-hat) = the student's answer sheet. y = the answer key. The difference between them is what drives learning.",
+   code:"output = model(data)    # ŷ — shape [32, 196]\n# target is y — shape [32]\n# one integer per image: the correct class index\n_, predicted = torch.max(output, 1)",
+   applies:"Classifier head. Linear(256→1024→512→196). This is where ŷ is produced."},
+
+  {num:"Step 4", name:"Loss",              formula:"L = -log(ŷ_y)",
+   why:"Looks at the probability assigned to the correct class y. Takes its negative log. If the model was confident and correct (ŷ_y ≈ 0.99) → loss ≈ 0.01. If the model was wrong (ŷ_y ≈ 0.01) → loss ≈ 4.6.",
+   analogy:"You distribute 100 poker chips across 196 boxes. CrossEntropyLoss only looks at how many chips you put on the correct box. More chips on the right box = lower loss.",
+   code:"criterion = nn.CrossEntropyLoss()\nloss = criterion(output, target)\n# output = ŷ (model predictions)\n# target = y (correct class indices)\n# loss = scalar — how wrong the batch was",
+   applies:"Universal. Same loss function for BaselineCNN, EfficientNet, VGG19, MobileNet on classification tasks."},
+
+  {num:"Step 5", name:"Backpropagation",   formula:"∂L/∂W = ∂L/∂ŷ · ∂ŷ/∂Z · ∂Z/∂W",
+   why:"Chain rule applied backwards through every operation from loss to input. Computes how much each weight W contributed to the final loss. Every weight gets a gradient value: increase this weight → does loss go up or down?",
+   analogy:"The judge traces the bad dish back through every cooking step to find exactly which decision caused the problem. Was it the heat? The timing? The seasoning? Each step gets a blame score.",
+   code:"loss.backward()\n# After this line, every weight has a .grad\n# You can inspect: model.block1[0].weight.grad\n# PyTorch computes all gradients automatically",
+   applies:"Universal. This is why PyTorch exists — automatic differentiation through any computation graph."},
+
+  {num:"Step 6", name:"Weight update",     formula:"W = W - lr · ∂L/∂W",
+   why:"Each weight is nudged in the direction that reduces loss. The learning rate lr controls how big the nudge is. Adam refines this by tracking gradient history — weights that rarely update get bigger nudges, frequent ones get smaller.",
+   analogy:"After the judge's feedback, you adjust your technique slightly. lr is how much you adjust. Too big = you overcorrect and make new mistakes. Too small = you barely improve.",
+   code:"optimizer = torch.optim.Adam(model.parameters(), lr=0.001)\noptimizer.step()\n# Reads every weight's .grad\n# Updates: W = W - lr * W.grad\n# Adam adds momentum tracking on top",
+   applies:"Universal. optimizer.step() runs this for every one of your model's 2M+ weights simultaneously."},
+];
+
+let selStep=null;
+
+function calc(){
+  const x=parseInt(document.getElementById('sl-x').value);
+  const w=parseInt(document.getElementById('sl-w').value)/100;
+  const b=parseInt(document.getElementById('sl-b').value)/100;
+  const p=parseInt(document.getElementById('sl-p').value)/100;
+  const g=parseInt(document.getElementById('sl-g').value)/100;
+  const lr=parseInt(document.getElementById('sl-lr').value)/10000;
+
+  document.getElementById('lbl-x').textContent=x;
+  document.getElementById('lbl-w').textContent=w.toFixed(2);
+  document.getElementById('lbl-b').textContent=b.toFixed(2);
+  document.getElementById('lbl-p').textContent=p.toFixed(2);
+  document.getElementById('lbl-g').textContent=g.toFixed(2);
+  document.getElementById('lbl-lr').textContent=lr.toFixed(4);
+
+  const z=w*x+b;
+  const a=Math.max(0,z);
+  const loss=-Math.log(Math.max(p,0.0001));
+  const wNew=w-lr*g;
+
+  document.getElementById('res-z').textContent=z.toFixed(4);
+  document.getElementById('res-a').textContent=a.toFixed(4);
+  document.getElementById('res-l').textContent=loss.toFixed(4);
+  document.getElementById('res-w').textContent=wNew.toFixed(4);
+}
+
+function renderSteps(){
+  const el=document.getElementById('step-list');
+  el.innerHTML='';
+  steps.forEach(s=>{
+    const sel=selStep===s.num;
+    const d=document.createElement('div');
+    d.className='step-card'+(sel?' sel':'');
+    d.innerHTML=`<div class="step-num">${s.num}</div>
+      <div class="step-name">${s.name}</div>
+      <div class="step-formula">${s.formula}</div>`;
+    d.onclick=()=>{selStep=s.num;renderSteps();renderDetail();};
+    el.appendChild(d);
+  });
+  // Step 7 card
+  const d7=document.createElement('div');
+  const sel7=selStep==='Step 7';
+  d7.className='step-card'+(sel7?' sel':'');
+  d7.innerHTML=`<div class="step-num">Step 7</div>
+    <div class="step-name">Full loop</div>
+    <div class="step-formula">Steps 1–6 repeated</div>`;
+  d7.onclick=()=>{selStep='Step 7';renderSteps();renderDetail();};
+  el.appendChild(d7);
+}
+
+function renderDetail(){
+  const el=document.getElementById('detail-panel');
+  if(!selStep){el.innerHTML=`<p style="color:var(--text3);font-size:13px">← Click any step to see the formula, explanation, and analogy.</p>`;return;}
+  if(selStep==='Step 7'){
+    el.innerHTML=`
+      <div class="detail-step">Step 7</div>
+      <div class="detail-title">The full training loop</div>
+      <div class="applies-to">VGG19 · EfficientNet · MobileNet · ResNet · BaselineCNN — all of them</div>
+      <div class="detail-formula-box">X → Z=W*X+b → A=ReLU(Z) → ŷ=softmax(W_fc·A+b)\n  → L=-log(ŷ_y) → ∂L/∂W → W=W-lr·∂L/∂W → repeat</div>
+      <div class="detail-why">This loop runs 254 times per epoch (8144 ÷ 32). Over 20 epochs that is 5,080 weight updates. Each update nudges every weight slightly toward lower loss. The architecture changes between models — the loop never does.</div>
+      <div class="detail-analogy" style="margin-top:10px">The chef cooks every recipe in the cookbook (1 epoch). After tasting each dish (loss), they get specific feedback on what went wrong (backprop) and adjust their technique slightly (weight update). After 20 full reads of the cookbook, they have a reasonably trained chef.</div>
+      <div class="detail-code" style="margin-top:12px"><pre>for epoch in range(NUM_EPOCHS):\n    model.train()\n    for data, target in train_loader:\n        optimizer.zero_grad()          # clear old gradients\n        output = model(data)           # steps 1–3\n        loss = criterion(output,target)# step 4\n        loss.backward()                # step 5\n        optimizer.step()               # step 6\n    model.eval()\n    with torch.no_grad():\n        # validation pass</pre></div>`;
+    return;
+  }
+  const s=steps.find(x=>x.num===selStep);
+  if(!s) return;
+  el.innerHTML=`
+    <div class="detail-step">${s.num}</div>
+    <div class="detail-title">${s.name}</div>
+    <div class="applies-to">${s.applies}</div>
+    <div class="detail-formula-box">${s.formula}</div>
+    <div class="detail-why">${s.why}</div>
+    <div class="detail-analogy"><span style="color:var(--text3);font-size:12px">Analogy  </span>${s.analogy}</div>
+    <div class="detail-code" style="margin-top:12px"><pre>${s.code}</pre></div>`;
+}
+
+document.getElementById('theme-btn').onclick=()=>{
+  const light=document.body.classList.toggle('light');
+  document.getElementById('theme-btn').textContent=light?'Dark mode':'Light mode';
+};
+
+calc();
+renderSteps();
+renderDetail();
+</script>
+</body>
+</html>
