@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+# Conda / venv
+*.egg-info/
+.env
+# Data
+data/raw/
+data/processed/
+# Outputs
+outputs/checkpoints/
+outputs/logs/
+outputs/plots/
+outputs/predictions/
+outputs/reports/
+outputs/crops/
+# Jupyter
+.ipynb_checkpoints/
+# PyCharm
+.idea/
+# OS
+.DS_Store
+Thumbs.db
+# Reference artifacts
+reference/
+*.pt
