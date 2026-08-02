@@ -33,7 +33,7 @@ classifier.eval()
 val_transform = get_val_transforms()
 
 # ---- Run detection ----
-IMAGE_PATH = r"C:\Users\dania\Pictures\catdog.jpg"
+IMAGE_PATH = r"C:\Users\dania\Pictures\lss1.png"
 results = detector(IMAGE_PATH)
 
 orig_img = results[0].orig_img  # BGR numpy array
