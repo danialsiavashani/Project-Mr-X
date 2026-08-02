@@ -7,14 +7,20 @@ TRAIN_ROOT = "ml/wildlife-monitor/data/processed/train"
 VALID_ROOT = "ml/wildlife-monitor/data/processed/valid"
 
 VAL_SPLIT = 0.2
-random.seed(42)  # reproducible split
+SEED = 42
+
+if os.path.exists(TRAIN_ROOT):
+    shutil.rmtree(TRAIN_ROOT)
+if os.path.exists(VALID_ROOT):
+    shutil.rmtree(VALID_ROOT)
 
 classes = os.listdir(SOURCE_ROOT)
 
 for cls in classes:
     src_dir = os.path.join(SOURCE_ROOT, cls)
-    files = os.listdir(src_dir)
-    random.shuffle(files)
+    files = sorted(os.listdir(src_dir))  # deterministic base order
+    rng = random.Random(SEED)  # fresh RNG per class — no shared state
+    rng.shuffle(files)
 
     split_idx = int(len(files) * (1 - VAL_SPLIT))
     train_files = files[:split_idx]
