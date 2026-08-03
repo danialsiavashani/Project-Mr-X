@@ -1,9 +1,10 @@
 from fastapi import FastAPI
-from app.api.routes import detections
+from app.api.routes import detections, species
 
 app = FastAPI(title="Project Mr. X API")
 
 app.include_router(detections.router)
+app.include_router(species.router)
 
 
 @app.get("/")
