@@ -24,8 +24,8 @@ CONFIDENCE_THRESHOLD = 0.65
 MIN_CROP_AREA_RATIO = 0.005
 CROP_PADDING_RATIO = 0.12  # expand box by 12% on each side before classifying
 WEIGHTS_PATH = "MDV6-yolov10-e.pt"
-CHECKPOINT_PATH = "ml/wildlife-monitor/outputs/checkpoints/efficientnet_wildlife_best.pth"
-CROPS_DIR = "ml/wildlife-monitor/outputs/crops"
+CHECKPOINT_PATH = "outputs/checkpoints/efficientnet_wildlife_best.pth"
+CROPS_DIR = "outputs/crops"
 CROP_RETENTION_DAYS = 30
 
 
