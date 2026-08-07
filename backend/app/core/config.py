@@ -11,3 +11,18 @@ if not BEHAVIORPULSE_CLIENT_ID or not BEHAVIORPULSE_API_KEY:
     print("WARNING: BehaviorPulse API credentials not set in .env")
 if not BEHAVIORPULSE_BASE_URL:
     print("WARNING: BEHAVIORPULSE_BASE_URL not set in .env")
+
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "14"))
+
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
+ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH")
+VIEWER_USERNAME = os.getenv("VIEWER_USERNAME")
+VIEWER_PASSWORD_HASH = os.getenv("VIEWER_PASSWORD_HASH")
+
+if not JWT_SECRET_KEY:
+    print("WARNING: JWT_SECRET_KEY not set in .env")
+if not ADMIN_USERNAME or not ADMIN_PASSWORD_HASH:
+    print("WARNING: admin credentials not fully set in .env")
