@@ -96,7 +96,10 @@ class WildlifePipeline:
         """
         Runs detection + classification on one image.
         Returns a list of dicts, one per detection:
-          - "classified": species result (species is "unknown" if below CONFIDENCE_THRESHOLD)
+          - "classified": species result (species is "unknown" if below CONFIDENCE_THRESHOLD).
+            Includes "crop_image" (raw array) and "crop_path" (where it WOULD save) —
+            the caller decides whether this detection is worth writing to disk
+            (e.g. only on a genuine new visit, not every "still present" frame).
           - "rejected_small_crop": box too small relative to frame (uses the UNPADDED box size)
           - "skipped_non_animal": MegaDetector flagged this as person/vehicle, never classified
         """
@@ -166,7 +169,7 @@ class WildlifePipeline:
             timestamp = int(time.time() * 1000)
             unique_id = uuid.uuid4().hex[:8]
             crop_filename = f"{CROPS_DIR}/crop_{timestamp}_{unique_id}_{species}.jpg"
-            cv2.imwrite(crop_filename, crop_bgr)  # save the ORIGINAL (unpadded) crop for review/logging
+            # Not saved here — caller decides whether to write crop_image to crop_path.
 
             detections.append({
                 "status": "classified",
@@ -177,6 +180,7 @@ class WildlifePipeline:
                 "detector_confidence": det_conf,
                 "box": [int(x1), int(y1), int(x2), int(y2)],
                 "crop_path": crop_filename,
+                "crop_image": crop_bgr,
             })
 
         return detections

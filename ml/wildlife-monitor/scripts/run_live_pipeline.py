@@ -13,7 +13,8 @@ API_BASE_URL = "http://127.0.0.1:8000"
 CAMERA_ID = "backyard_cam_1"
 DETECTION_INTERVAL_SECONDS = 2
 STREAM_PUSH_INTERVAL_SECONDS = 0.1
-STATUS_CHECK_INTERVAL_SECONDS = 2  # how often to ask "is anyone watching?"
+STATUS_CHECK_INTERVAL_SECONDS = 2
+DEDUP_WINDOW_SECONDS = 30
 
 SPECIES_NAME_MAP = {
     "american_crow": "American Crow", "anna_hummingbird": "Anna's Hummingbird",
@@ -25,12 +26,21 @@ SPECIES_NAME_MAP = {
     "squirrel": "Squirrel", "white_crowned_sparrow": "White-crowned Sparrow",
 }
 
+last_logged_time = {}  # species -> wall-clock time.time() it was last logged
+
 
 def get_species_id_lookup():
     response = requests.get(f"{API_BASE_URL}/species", timeout=5)
     response.raise_for_status()
     name_to_id = {s["name"]: s["id"] for s in response.json()}
     return {c: name_to_id[d] for c, d in SPECIES_NAME_MAP.items() if d in name_to_id}
+
+
+def is_duplicate_visit(species, now, window=DEDUP_WINDOW_SECONDS):
+    last_seen = last_logged_time.get(species)
+    is_dup = last_seen is not None and (now - last_seen) < window
+    last_logged_time[species] = now
+    return is_dup
 
 
 def log_detection(detection, species_id_lookup):
@@ -73,7 +83,7 @@ def check_should_stream():
         resp = requests.get(f"{API_BASE_URL}/stream/should-stream/{CAMERA_ID}", timeout=2)
         return resp.json().get("active", False)
     except requests.RequestException:
-        return False  # fail safe: don't push if we can't confirm anyone's watching
+        return False
 
 
 if __name__ == "__main__":
@@ -109,7 +119,16 @@ if __name__ == "__main__":
             if now - last_detection_time >= DETECTION_INTERVAL_SECONDS:
                 last_detection_time = now
                 for det in pipeline.process_image(frame):
+                    if det["status"] == "classified" and det["species"] != "unknown":
+                        species = det["species"]
+                        if is_duplicate_visit(species, now):
+                            print(f"(still present) {species} ({det['classifier_confidence']:.2f})")
+                            continue
+                        print(f"DETECTED: {species} ({det['classifier_confidence']:.2f})")
+                        cv2.imwrite(det["crop_path"], det["crop_image"])  # new visit — worth keeping
                     log_detection(det, species_id_lookup)
+
+            time.sleep(0.02)
     except KeyboardInterrupt:
         print("Stopping...")
     finally:

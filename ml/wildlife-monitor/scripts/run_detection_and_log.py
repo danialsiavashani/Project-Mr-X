@@ -2,6 +2,7 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+import cv2
 import requests
 
 from src.inference.detect_and_classify import WildlifePipeline
@@ -88,4 +89,6 @@ if __name__ == "__main__":
     results = pipeline.process_image(IMAGE_PATH)
 
     for detection in results:
+        if detection["status"] == "classified":
+            cv2.imwrite(detection["crop_path"], detection["crop_image"])
         log_detection(detection, species_id_lookup)

@@ -55,6 +55,8 @@ while True:
             if det["status"] != "classified":
                 continue
 
+            cv2.imwrite(det["crop_path"], det["crop_image"])  # full debug trail — save every classified crop
+
             species = det["species"]
             x1, y1, x2, y2 = det["box"]
             label = f"{species} ({det['classifier_confidence']:.2f})"
